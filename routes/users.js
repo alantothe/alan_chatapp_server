@@ -132,10 +132,6 @@ module.exports = function (io) {
     }
   });
 
-
-
-
-
   router.post("/send-friend-request", async (req, res) => {
     const { senderId, recipientEmail } = req.body;
 
@@ -217,9 +213,6 @@ module.exports = function (io) {
 
   }
   );
-
-
-
 
   router.post("/reject-friend-request", async (req, res) => {
     const { senderId, receiverId } = req.body;

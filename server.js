@@ -69,6 +69,9 @@ io.on('connection', (socket) => {
 
 var indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users')(io);
+const messagesRouter = require('./routes/messages')(io);
+app.use('/api/messages', messagesRouter);
+
 
 app.use('/', indexRouter);
 app.use('/api/user', usersRouter);
