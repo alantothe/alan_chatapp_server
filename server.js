@@ -2,11 +2,10 @@ const express = require("express");
 const createError = require('http-errors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
-
 const logger = require('morgan');
-const http = require("http");
 const cors = require("cors");
 const mongoose = require("mongoose");
+const http = require("http");
 require("dotenv").config();
 
 const PORT = process.env.API_PORT || 4000;
@@ -15,6 +14,13 @@ var { mongoConnect } = require('./mongo.js');
 mongoConnect();
 
 const app = express();
+const server = http.createServer(app);
+const io = require("socket.io")(server, {
+  cors: {
+    origin: "*",
+  },
+});
+
 app.use(express.json());
 
 app.use(logger('dev'));
@@ -28,61 +34,29 @@ app.use(function(req, res, next) {
   next();
 });
 
-// Create HTTP server and socket.io server
-const server = http.createServer(app);
-const { Server } = require('socket.io');
-const io = new Server(server, {
-  cors: {
-    origin: "*"
-  }
-});
+io.on("connection", (socket) => {
+  console.log(`User connected: ${socket.id}`);
 
-const emailToSocketMap = new Map();
+  // Add event listeners for your custom events here
+  // Example: socket.on("custom_event", (data) => { ... });
 
-
-io.on('connection', (socket) => {
-  console.log('a user connected');
-
-  socket.on("register_email", (data) => {
-    emailToSocketMap.set(data.email, socket);
-  });
-
-  socket.on('send_friend_request', async (data) => {
-    try {
-      const recipientSocket = emailToSocketMap.get(data.recipientEmail);
-
-      if (recipientSocket) {
-        recipientSocket.emit("friend_request_received", data);
-      } else {
-        console.error("Socket not found for email:", data.recipientEmail);
-      }
-    } catch (error) {
-      console.error("Error processing friend request:", error);
-    }
-  });
-
-  socket.on('disconnect', () => {
-    console.log('user disconnected');
+  socket.on("disconnect", () => {
+    console.log(`User disconnected: ${socket.id}`);
   });
 });
 
 // register the routes
 
 var indexRouter = require('./routes/index');
-const usersRouter = require('./routes/users')(io);
-const messagesRouter = require('./routes/messages')(io);
-const conversationsRouter = require('./routes/conversations')(io);
-
-
+const usersRouter = require('./routes/users');
+const messagesRouter = require('./routes/messages');
+const conversationsRouter = require('./routes/conversations');
 
 app.use('/', indexRouter);
 app.use('/api/user', usersRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/conversations', conversationsRouter);
-app.set('io', io);
 
-// Use the HTTP server to listen instead of the app
 server.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
 });
-
