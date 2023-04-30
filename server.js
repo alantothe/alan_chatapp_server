@@ -2,6 +2,7 @@ const express = require("express");
 const createError = require('http-errors');
 const path = require('path');
 const cookieParser = require('cookie-parser');
+
 const logger = require('morgan');
 const http = require("http");
 const cors = require("cors");
@@ -15,11 +16,10 @@ mongoConnect();
 
 const app = express();
 app.use(express.json());
+
 app.use(logger('dev'));
 app.use(cors());
 app.use('/uploads', express.static('uploads'));
-
-
 
 // Add CORS headers
 app.use(function(req, res, next) {
@@ -38,6 +38,7 @@ const io = new Server(server, {
 });
 
 const emailToSocketMap = new Map();
+
 
 io.on('connection', (socket) => {
   console.log('a user connected');
@@ -70,11 +71,14 @@ io.on('connection', (socket) => {
 var indexRouter = require('./routes/index');
 const usersRouter = require('./routes/users')(io);
 const messagesRouter = require('./routes/messages')(io);
-app.use('/api/messages', messagesRouter);
+const conversationsRouter = require('./routes/conversations')(io);
+
 
 
 app.use('/', indexRouter);
 app.use('/api/user', usersRouter);
+app.use('/api/messages', messagesRouter);
+app.use('/api/conversations', conversationsRouter);
 app.set('io', io);
 
 // Use the HTTP server to listen instead of the app

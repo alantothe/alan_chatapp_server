@@ -1,4 +1,3 @@
-const { ObjectId } = require("mongodb");
 const express = require("express");
 const bcrypt = require("bcrypt");
 const { v4: uuid } = require("uuid");
@@ -51,6 +50,7 @@ module.exports = function (io) {
         avatar: req.file.path,
         friends: [],
         friendRequests: [],
+        conversations: [],
 
       };
 
@@ -131,6 +131,28 @@ module.exports = function (io) {
       res.status(500).json({ message: 'Server error' });
     }
   });
+
+  router.get('/:id/friends', async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const users = db().collection("users");
+
+      const user = await users.findOne({ id: userId });
+
+      if (!user) {
+        res.status(404).json({ message: 'User not found' });
+      } else {
+        // Populate friends array with friend objects
+        const friends = await users.find({ id: { $in: user.friends } }).toArray();
+
+        res.json(friends);
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: 'Server error' });
+    }
+  });
+
 
   router.post("/send-friend-request", async (req, res) => {
     const { senderId, recipientEmail } = req.body;
@@ -228,6 +250,25 @@ module.exports = function (io) {
       res.status(500).json({ message: "An error occurred while rejecting the friend request." });
     }
   });
+
+  router.get("/:id/friend-requests", async (req, res) => {
+    try {
+      const userId = req.params.id;
+      const users = db().collection("users");
+
+      const user = await users.findOne({ id: userId });
+
+      if (!user) {
+        res.status(404).json({ message: "User not found" });
+      } else {
+        res.json(user.friendRequests);
+      }
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ message: "Server error" });
+    }
+  });
+
 
 
 

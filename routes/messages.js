@@ -4,8 +4,9 @@ const { v4: uuid } = require("uuid");
 const router = express.Router();
 
 module.exports = function (io) {
-  router.post("/send", async (req, res) => {
+  router.post("/", async (req, res) => {
     try {
+
       const { senderId, receiverId, content } = req.body;
       const newMessage = {
         _id: uuid(),
@@ -16,8 +17,6 @@ module.exports = function (io) {
       };
 
       await db().collection("messages").insertOne(newMessage);
-
-      io.to(receiverId).emit("new_message", newMessage);
 
       res.status(201).json({ success: true, message: "Message sent successfully." });
     } catch (error) {
@@ -50,3 +49,4 @@ module.exports = function (io) {
 
   return router;
 };
+
