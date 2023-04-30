@@ -1,36 +1,58 @@
 const express = require("express");
 const router = express.Router();
 const { db } = require("../mongo");
-
-router.post("/", async (req, res, next) => {
+router.post("/", async (req, res) => {
   const { userId, friendId } = req.body;
+   console.log("userId:", userId);
+   console.log("friendId:", friendId);
 
   try {
-    // Check if conversation already exists
-    let conversation = await db().collection("conversations").findOne({
-      participants: { $all: [userId, friendId] },
-    });
+    const user1 = await db().collection("users").findOne({ id:userId });
+    const user2 = await db().collection("users").findOne({ id:friendId });
 
-    if (!conversation) {
-      // If conversation does not exist, create a new one
-      const user = await db().collection("users").findOne({ id: userId });
-      const friend = await db().collection("users").findOne({ id: friendId });
 
-      const newConversation = {
-        participants: [
-          { id: user.id, email: user.email },
-          { id: friend.id, email: friend.email },
-        ],
-      };
+    const existingConversation = await db()
+    .collection("conversations")
+    .findOne({
+    $and: [
+    { "participants.id": userId },
+    { "participants.id": friendId },
+    { "participants": { $size: 2 } },
+  ],
+});
 
-      const result = await db().collection("conversations").insertOne(newConversation);
-      conversation = result.ops[0];
-    }
+if (existingConversation) {
+return res.status(400).json({ message: "Conversation already exists" });
+}
 
-    res.json(conversation);
+
+    const newConversation = {
+      participants: [
+        {
+          id: user1.id,
+          firstName: user1.firstName,
+          lastName: user1.lastName,
+          avatar: user1.avatar,
+        },
+        {
+          id: user2.id,
+          firstName: user2.firstName,
+          lastName: user2.lastName,
+          avatar: user2.avatar,
+        },
+      ],
+      createdAt: new Date(),
+    };
+
+    const result = await db().collection("conversations").insertOne(newConversation);
+
+    const insertedId = result.insertedId;
+    const insertedConversation = await db().collection("conversations").findOne({ _id: insertedId });
+
+    res.status(201).json(insertedConversation);
   } catch (error) {
-    console.error(error);
-    next(error);
+    console.error("Error creating conversation:", error);
+    res.status(500).json({ message: "Error creating conversation", error });
   }
 });
 

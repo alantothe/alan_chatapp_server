@@ -37,8 +37,18 @@ app.use(function(req, res, next) {
 io.on("connection", (socket) => {
   console.log(`User connected: ${socket.id}`);
 
-  // Add event listeners for your custom events here
-  // Example: socket.on("custom_event", (data) => { ... });
+  socket.on("sendMessage", (data) => {
+    io.sockets.emit("message", data);
+  });
+
+  socket.on("sendFriendRequest", (data) => {
+    io.sockets.emit("updatePendingInvites", data);
+  });
+
+  socket.on("friendRequestAccepted", (data) => {
+  io.sockets.emit("updateFriendsList", data);
+});
+
 
   socket.on("disconnect", () => {
     console.log(`User disconnected: ${socket.id}`);
@@ -56,6 +66,8 @@ app.use('/', indexRouter);
 app.use('/api/user', usersRouter);
 app.use('/api/messages', messagesRouter);
 app.use('/api/conversations', conversationsRouter);
+
+app.set("socketio", io);
 
 server.listen(PORT, () => {
   console.log(`server is running on port ${PORT}`);
