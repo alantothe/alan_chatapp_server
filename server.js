@@ -42,12 +42,17 @@ io.on("connection", (socket) => {
   });
 
   socket.on("sendFriendRequest", (data) => {
-    io.sockets.emit("updatePendingInvites", data);
+    console.log("sendFriendRequest data:", data);
+    io.sockets.emit("newFriendRequest", data);
   });
 
+
   socket.on("friendRequestAccepted", (data) => {
-  io.sockets.emit("updateFriendsList", data);
-});
+    console.log("friendRequestAccepted data:", data);
+    io.sockets.emit("updateFriendsList", { senderId: data.senderId });
+
+  });
+
 
 
   socket.on("disconnect", () => {
